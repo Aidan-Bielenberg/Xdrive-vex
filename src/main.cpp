@@ -1,76 +1,63 @@
-/*----------------------------------------------------------------------------*/
-/*                                                                            */
-/*    Module:       main.cpp                                                  */
-/*    Author:       aidan                                                     */
-/*    Created:      Mon Jan 17 2022                                           */
-/*    Description:  V5 project                                                */
-/*                                                                            */
-/*----------------------------------------------------------------------------*/
+#include "main.h"
 
-// ---- START VEXCODE CONFIGURED DEVICES ----
-// Robot Configuration:
-// [Name]               [Type]        [Port(s)]
-// MotorUL              motor         9
-// MotorUR              motor         2
-// MotorLL              motor         10
-// MotorLR              motor         1
-// Controller1          controller
-// GPS                  gps           12
-// ---- END VEXCODE CONFIGURED DEVICES ----
+pros::Controller master(CONTROLLER_MASTER);
+pros::Motor br(1);
+pros::Motor fr(2);
+pros::Motor bl(10);
+pros::Motor fl(9);
 
-#include "vex.h"
 
-using namespace vex;
+class vector
+{
+	public:
+		int x;
+		int y;
+		int r;
+};
 
-int display() {
-  while (true) {
-    Controller1.Screen.clearLine();
-    Controller1.Screen.print("%f", GPS.heading());
-    wait(0.5, seconds);
-  }
+class remote
+{
+public:
+	bool buttonA = master.get_digital(pros::E_CONTROLLER_DIGITAL_A);
+};
+
+remote Remote;
+vector Vector;
+
+void disabled()
+{
+	pros::lcd::set_text(1, "disabled...");
 }
 
-int driveLoop() {
-  while (true) {
-    int axisX = Controller1.Axis4.position();
-    int axisY = Controller1.Axis3.position();
-    int axisR = Controller1.Axis1.position();
-
-    int dblimit = 5;
-
-    if (axisX <= dblimit && axisX >= -1 * dblimit) {
-      axisX = 0;
-    }
-    if (axisY <= dblimit && axisY >= -1 * dblimit) {
-      axisY = 0;
-    }
-    if (axisR <= dblimit && axisR >= -1 * dblimit) {
-      axisR = 0;
-    }
-
-    MotorUL.setVelocity(axisR + axisY + axisX, percent);
-    MotorLL.setVelocity(axisR + axisY - axisX, percent);
-    MotorUR.setVelocity(axisR - axisY + axisX, percent);
-    MotorLR.setVelocity(axisR - axisY - axisX, percent);
-  }
+void competition_initialize()
+{
+	pros::lcd::set_text(1, "competition init");
 }
 
-int main() {
-  // Initializing Robot Configuration. DO NOT REMOVE!
-  vexcodeInit();
-  //=====INIT=====
-  MotorUL.setVelocity(100, percent);
-  MotorUR.setVelocity(100, percent);
-  MotorLL.setVelocity(100, percent);
-  MotorLR.setVelocity(100, percent);
+void autonomous()
+{
+	pros::lcd::set_text(1, "autonomous");
+}
 
-  MotorUL.spin(forward);
-  MotorUR.spin(forward);
-  MotorLL.spin(forward);
-  MotorLR.spin(forward);
-  //==============
+void opcontrol()
+{
+	br.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	br.set_reversed(true);
+	fr.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	fr.set_reversed(true);
+	bl.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
+	fl.set_brake_mode(pros::E_MOTOR_BRAKE_HOLD);
 
-  GPS.calibrate();
-  task t1(display);
-  driveLoop();
+	while (true)
+	{
+		Vector.x = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
+		Vector.y = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
+		Vector.r = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+		// ========= Math =========
+		fl.move(Vector.y + Vector.x + Vector.r);
+		fr.move(Vector.y - Vector.x - Vector.r);
+		bl.move(Vector.y - Vector.x + Vector.r);
+		br.move(Vector.y + Vector.x - Vector.r);
+
+	}
 }
